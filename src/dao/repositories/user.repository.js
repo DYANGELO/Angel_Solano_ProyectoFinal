@@ -1,20 +1,33 @@
-import { UserManager } from "../managers/user.manager.js";
-import { UserDTO } from "../dtos/user.dto.js";
-
-const userManager = new UserManager();
+import { User } from "../models/user.model.js";
+import { Cart } from "../models/cart.model.js";
 
 export class UserRepository {
-  async createUser(userData) {
-    return await userManager.createUser(userData);
+  async create(userData) {
+    const cart = await Cart.create({ products: [] }); 
+    const user = await User.create({ ...userData, cart: cart._id }); 
+    return user;
   }
 
-  async findUserByEmail(email) {
-    const user = await userManager.findUserByEmail(email);
-    return user ? new UserDTO(user) : null;
+  async findByEmail(email) {
+    return await User.findOne({ email }).populate("cart");
   }
 
-  async findUserById(id) {
-    const user = await userManager.findUserById(id);
-    return user ? new UserDTO(user) : null;
+  async findById(id) {
+    return await User.findById(id).populate("cart");
+  }
+
+  async update(id, userData) {
+    return await User.findByIdAndUpdate(id, userData, { new: true });
+  }
+
+  async delete(id) {
+    const user = await User.findByIdAndDelete(id);
+    if (user) {
+      await Cart.findByIdAndDelete(user.cart); 
+    }
+    return user;
+  }
+  async updateRole(id, newRole) {
+    return await User.findByIdAndUpdate(id, { role: newRole }, { new: true });
   }
 }
